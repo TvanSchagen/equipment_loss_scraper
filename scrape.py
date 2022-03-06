@@ -4,10 +4,15 @@ import shutil
 from os import path, mkdir
 import time
 
+# set a delay to not get blocked for doing too many requests
+DELAY_SECONDS = 1
+
 number_succeeded = 0
 number_already_downloaded = 0
 number_unable_to_download = 0
 number_failed = 0
+
+start = time.time()
 
 # Download file
 if not path.isfile("file.html"):
@@ -84,7 +89,7 @@ with open("file.html", "r", encoding="utf8") as file:
                             with urllib.request.urlopen(href.strip()) as response, open(full_file_name, 'wb') as out_file:
                                 shutil.copyfileobj(response, out_file)
                                 number_succeeded = number_succeeded + 1
-                                time.sleep(1)
+                                time.sleep(DELAY_SECONDS)
                     else:
                         print("Unable to download: " + href)
                         number_unable_to_download = number_unable_to_download + 1
@@ -93,7 +98,8 @@ with open("file.html", "r", encoding="utf8") as file:
                     number_failed = number_failed + 1
 
 print(" --- SUMMARY --- ")
-print("Succeeded: ", number_succeeded)
-print("Already downloaded: ", number_already_downloaded)
-print("Unable to download: ", number_unable_to_download)
-print("Failed:", number_failed)
+print("Time took ", round(time.time() - start, 2), "s")
+print("No. Succeeded: ", number_succeeded)
+print("No. Already downloaded: ", number_already_downloaded)
+print("No. Unable to download: ", number_unable_to_download)
+print("No. Failed:", number_failed)
