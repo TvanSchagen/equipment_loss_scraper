@@ -4,6 +4,11 @@ import shutil
 from os import path, mkdir
 import time
 
+number_succeeded = 0
+number_already_downloaded = 0
+number_unable_to_download = 0
+number_failed = 0
+
 # Download file
 if not path.isfile("file.html"):
     print("Downloading file..")
@@ -49,32 +54,46 @@ with open("file.html", "r", encoding="utf8") as file:
             # get all images from each object
             img_idx = 0
             for img in element.find_all("a"):
-                img_idx = img_idx + 1
-                href = img["href"].strip()
+                try:
+                    img_idx = img_idx + 1
+                    href = img["href"].strip()
 
-                # get state from the image names
-                state = img.text.strip().split(",")[1].replace(")", "").strip()
+                    # get state from the image names
+                    state = img.text.strip().split(
+                        ",")[1].replace(")", "").strip()
 
-                # some images are from links without a direct image, so check file type of link
-                if (href.endswith(".png") or href.endswith(".jpg")):
+                    # some images are from links without a direct image, so check file type of link
+                    if (href.endswith(".png") or href.endswith(".jpg")):
 
-                    # create a file name with the model, number, and state
-                    file_name = type + "_" + \
-                        str(img_idx) + "_[" + state + "]." + \
-                        href.split(".")[-1]
+                        # create a file name with the model, number, and state
+                        file_name = type + "_" + \
+                            str(img_idx) + "_[" + state + "]." + \
+                            href.split(".")[-1]
 
-                    # replace forward and backward slashes to prevent invalid filenames
-                    full_file_name = path.join(
-                        new_path, file_name.replace("\\", " ").replace("/", " "))
+                        # replace forward and backward slashes to prevent invalid filenames
+                        full_file_name = path.join(
+                            new_path, file_name.replace("\\", " ").replace("/", " "))
 
-                    if (path.exists(full_file_name)):
-                        print("File already exists: " + full_file_name)
+                        if (path.exists(full_file_name)):
+                            print("File already exists: " + full_file_name)
+                            number_already_downloaded = number_already_downloaded + 1
+                        else:
+                            print("Downloading from: " + href +
+                                  ", saving to: " + full_file_name)
+
+                            with urllib.request.urlopen(href.strip()) as response, open(full_file_name, 'wb') as out_file:
+                                shutil.copyfileobj(response, out_file)
+                                number_succeeded = number_succeeded + 1
+                                time.sleep(1)
                     else:
-                        print("Downloading from: " + href +
-                              ", saving to: " + full_file_name)
+                        print("Unable to download: " + href)
+                        number_unable_to_download = number_unable_to_download + 1
+                except Exception as e:
+                    print("Error occurred while trying to download image: ", e)
+                    number_failed = number_failed + 1
 
-                        with urllib.request.urlopen(href.strip()) as response, open(full_file_name, 'wb') as out_file:
-                            shutil.copyfileobj(response, out_file)
-                            time.sleep(1)
-                else:
-                    print("Unable to download: " + href)
+print(" --- SUMMARY --- ")
+print("Succeeded: ", number_succeeded)
+print("Already downloaded: ", number_already_downloaded)
+print("Unable to download: ", number_unable_to_download)
+print("Failed:", number_failed)
